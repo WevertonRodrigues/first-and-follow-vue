@@ -1,20 +1,26 @@
 <template>
-  <div id="app">
+  <div class="d-flex flex-col flex-center">
     <div id="nav">
       <router-link to="/">Home</router-link> |
       <router-link to="/about">About</router-link>
     </div>
-    <router-view />
+    <div id="main-app">
+      <router-view />
+    </div>
   </div>
 </template>
 
 <style>
-#app {
+#main-app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+  display: flex;
+  flex-direction: column;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 #nav {
@@ -28,5 +34,22 @@
 
 #nav a.router-link-exact-active {
   color: #42b983;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column !important;
+}
+
+.flex-center {
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.margin-right {
+  margin-right: 2px;
 }
 </style>
