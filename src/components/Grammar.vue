@@ -5,15 +5,17 @@
       @newEntry="addNewEntry('variables', $event)"
       btnText="Adicione uma variável"
       placeholder="Nome da variável"
-      style="margin-bottom: 10px"
+      class="margin-bottom"
     />
 
     <AddEntry
       @newEntry="addNewEntry('terminalSymbols', $event)"
       btnText="Adicione um símbolo terminal"
       placeholder="Nome do símbolo terminal"
-      style="margin-bottom: 10px"
+      class="margin-bottom"
     />
+
+    <AddProductionRule class="margin-bottom" />
 
     <div class="d-flex flex-col" style="margin-bottom: 50px">
       <label for="initialVariable">Variável inicial</label>
@@ -29,10 +31,10 @@
       </select>
     </div>
 
-    <div class="d-flex flex-center">
+    <div class="d-flex flex-center margin-bottom">
       G = (
       <div
-        v-for="(target, targetIndex) in ['variables', 'terminalSymbols']"
+        v-for="target in ['variables', 'terminalSymbols']"
         :key="target"
         class="d-flex"
         style="margin: 0 2px"
@@ -49,18 +51,24 @@
             >,</span
           >
         </span>
-        }<span v-if="targetIndex !== 1">,</span>
+        },
       </div>
+      P, {{ contextFreeGrammar.initialVariable }}
       )
     </div>
+
+    First({{ contextFreeGrammar.initialVariable }}) =
   </div>
 </template>
 
 <script>
 import AddEntry from "../components/AddEntry";
+import AddRuleProduction from "../components/AddRuleProduction";
+
 export default {
   components: {
     AddEntry,
+    AddRuleProduction,
   },
 
   data() {
@@ -69,12 +77,19 @@ export default {
         variables: [],
         terminalSymbols: [],
         productionRules: {
-          S: ["aA", "Aa", "aaa"],
-          A: "b",
+          S: ["A", "B", "X"],
+          A: ["abaAa", "Xaa"],
+          B: ["b"],
+          X: ["tAAB", "e", "F"],
+          F: ["`B)", "X"],
         },
         initialVariable: "",
       },
     };
+  },
+
+  mounted() {
+    this.first(this.initialVariableOptions[0]);
   },
 
   computed: {
@@ -89,6 +104,37 @@ export default {
         this.contextFreeGrammar[target].push(evt);
       }
     },
+
+    first(variable, historic = []) {
+      const rules = this.contextFreeGrammar.productionRules[variable];
+      for (const rule of rules) {
+        if (
+          rule.charAt(0) === rule.charAt(0).toUpperCase() &&
+          rule.charAt(0).toLowerCase() !== rule.charAt(0).toUpperCase()
+        ) {
+          historic.push(variable);
+          if (!historic.includes(rule.charAt(0))) {
+            this.first(rule.charAt(0), historic);
+          }
+        } else {
+          /* console.log(
+            "testion",
+            rule.charAt(0),
+            rule.charAt(0).toLowerCase() !== rule.charAt(0).toUpperCase()
+          ); */
+          let string = "";
+          if (rule.charAt(0) !== rule.charAt(0).toUpperCase())
+            for (
+              let i = 0;
+              rule.charAt(i) !== rule.charAt(i).toUpperCase();
+              i++
+            )
+              string += rule.charAt(i);
+          else string = rule.charAt(0);
+          console.log(string);
+        }
+      }
+    },
   },
 };
 </script>
@@ -98,5 +144,9 @@ export default {
   text-decoration: underline !important;
   color: rgb(182, 63, 63);
   cursor: pointer !important;
+}
+
+.margin-bottom {
+  margin-bottom: 10px;
 }
 </style>
