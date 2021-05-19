@@ -63,12 +63,12 @@
 
 <script>
 import AddEntry from "../components/AddEntry";
-import AddRuleProduction from "../components/AddRuleProduction";
+import AddProductionRule from "../components/AddProductionRule";
 
 export default {
   components: {
     AddEntry,
-    AddRuleProduction,
+    AddProductionRule,
   },
 
   data() {
