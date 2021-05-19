@@ -3,15 +3,16 @@
     <button v-if="!showInput" @click="handlerClickAddEntry()">
       {{ btnText }}
     </button>
-    <input
-      v-else
-      ref="inputAdd"
-      type="text"
-      :placeholder="placeholder"
-      @keyup.enter.prevent="addEntry"
-      @keyup.esc="$refs.inputAdd.blur()"
-      @blur="showInput = false"
-    />
+    <slot v-else v-bind="{ showInput, changeShowInput }">
+      <input
+        ref="inputAdd"
+        type="text"
+        :placeholder="placeholder"
+        @keyup.enter.prevent="addEntry"
+        @keyup.esc="$refs.inputAdd.blur()"
+        @blur="changeShowInput(false)"
+      />
+    </slot>
   </div>
 </template>
 
@@ -27,20 +28,33 @@ export default {
       default: "Nome",
     },
   },
+
   data() {
     return {
       showInput: false,
     };
   },
 
+  watch: {
+    showInput() {
+      this.$emit("show");
+    },
+  },
+
   methods: {
+    changeShowInput(value) {
+      this.showInput = value;
+    },
     handlerClickAddEntry() {
-      this.showInput = true;
-      this.$nextTick(() => this.$refs.inputAdd.focus());
+      this.changeShowInput(true);
+      console.log(this.$slots.default);
+      if (this.$slots.default !== undefined)
+        this.$nextTick(() => this.$refs.inputAdd.focus());
+      else this.$emit("hide");
     },
     addEntry(evt) {
       this.$emit("newEntry", evt.target.value);
-      this.$refs.inputAdd.blur()
+      this.$refs.inputAdd.blur();
     },
   },
 };
