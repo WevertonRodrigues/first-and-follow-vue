@@ -1,12 +1,11 @@
 <template>
   <div class="d-flex flex-col">
-    <pre>{{ contextFreeGrammar }}</pre>
-    <AddEntry
-      @newEntry="addNewEntry('variables', $event)"
+    <!-- <AddEntry
+      @newEntry="addNewEntry('variables', $event.toUpperCase())"
       btnText="Adicione uma variável"
       placeholder="Nome da variável"
       class="margin-bottom"
-    />
+    /> -->
 
     <AddEntry
       @newEntry="addNewEntry('terminalSymbols', $event)"
@@ -15,7 +14,7 @@
       class="margin-bottom"
     />
 
-    <AddProductionRule class="margin-bottom" />
+    <AddProductionRule class="margin-bottom" @addNewRule="handlerAddRule" />
 
     <div class="d-flex flex-col" style="margin-bottom: 50px">
       <label for="initialVariable">Variável inicial</label>
@@ -31,7 +30,8 @@
       </select>
     </div>
 
-    <div class="d-flex flex-center margin-bottom">
+    <!-- Grammar -->
+    <div class="d-flex flex-center margin-bottom" style="margin-bottom: 50px">
       G = (
       <div
         v-for="target in ['variables', 'terminalSymbols']"
@@ -57,7 +57,72 @@
       )
     </div>
 
-    First({{ contextFreeGrammar.initialVariable }}) =
+    <!-- Production rules -->
+    <div
+      v-if="Object.keys(contextFreeGrammar.productionRules).length > 0"
+      class="d-flex flex-center"
+      style="margin-bottom: 50px"
+    >
+      <span class="margin-right">P = {</span>
+      <div class="d-flex flex-col margin-right">
+        <div
+          class="d-flex"
+          v-for="(
+            variableProductionRule, variableProductionRuleIndex
+          ) in Object.keys(contextFreeGrammar.productionRules)"
+          :key="variableProductionRuleIndex"
+        >
+          {{ variableProductionRule }}&rhard;
+          <div
+            class="d-flex"
+            v-for="(rule, ruleIndex) in contextFreeGrammar.productionRules[
+              variableProductionRule
+            ]"
+            :key="ruleIndex"
+          >
+            <span class="margin-x" v-html="formatRule(rule)"></span>
+            <span
+              v-if="
+                ruleIndex !==
+                contextFreeGrammar.productionRules[variableProductionRule]
+                  .length -
+                  1
+              "
+              >|</span
+            >
+          </div>
+          <span
+            v-if="
+              variableProductionRuleIndex !==
+              Object.keys(contextFreeGrammar.productionRules).length - 1
+            "
+            >,
+          </span>
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- First -->
+    <div
+      v-if="contextFreeGrammar.initialVariable.length > 0"
+      class="d-flex flex-center"
+    >
+      <span class="margin-right"
+        >First({{ contextFreeGrammar.initialVariable }}) = {</span
+      >
+      <span
+        v-for="(string, stringIndex) in firstFromInitialVariable"
+        :key="string"
+        class="margin-right"
+      >
+        <span v-html="formatRule(string)"></span>
+        <span v-if="stringIndex !== firstFromInitialVariable.length - 1"
+          >,</span
+        >
+      </span>
+      }
+    </div>
   </div>
 </template>
 
@@ -77,24 +142,31 @@ export default {
         variables: [],
         terminalSymbols: [],
         productionRules: {
-          S: ["A", "B", "X"],
+          /* S: ["A", "B", "X", "cF"],
           A: ["abaAa", "Xaa"],
-          B: ["b"],
-          X: ["tAAB", "e", "F"],
-          F: ["`B)", "X"],
+          B: ["b", ""],
+          X: ["2AAB", "e", "F"],
+          F: ["`B)", "X", "B"], */
         },
         initialVariable: "",
       },
     };
   },
 
-  mounted() {
-    this.first(this.initialVariableOptions[0]);
-  },
-
   computed: {
     initialVariableOptions() {
       return Object.keys(this.contextFreeGrammar.productionRules);
+    },
+    firstFromInitialVariable() {
+      let arr = [];
+      if (this.contextFreeGrammar.initialVariable !== "") {
+        const temp = this.first(this.contextFreeGrammar.initialVariable);
+
+        temp.map((f) => {
+          if (!arr.includes(f)) arr.push(f);
+        });
+      }
+      return arr;
     },
   },
 
@@ -105,8 +177,21 @@ export default {
       }
     },
 
-    first(variable, historic = []) {
+    handlerAddRule(evt) {
+      const { variableName, rules } = evt;
+
+      this.$set(this.contextFreeGrammar.productionRules, variableName, rules);
+      this.contextFreeGrammar.variables.push(variableName);
+    },
+
+    formatRule(string) {
+      if (string.length > 0) return string;
+      return "&epsilon;";
+    },
+
+    first(variable, historic = [], strings = []) {
       const rules = this.contextFreeGrammar.productionRules[variable];
+
       for (const rule of rules) {
         if (
           rule.charAt(0) === rule.charAt(0).toUpperCase() &&
@@ -114,26 +199,26 @@ export default {
         ) {
           historic.push(variable);
           if (!historic.includes(rule.charAt(0))) {
-            this.first(rule.charAt(0), historic);
+            this.first(rule.charAt(0), historic, strings);
           }
         } else {
-          /* console.log(
-            "testion",
-            rule.charAt(0),
-            rule.charAt(0).toLowerCase() !== rule.charAt(0).toUpperCase()
-          ); */
+          /* console.log("rule", rule);
           let string = "";
-          if (rule.charAt(0) !== rule.charAt(0).toUpperCase())
+          if (rule.length > 0)
             for (
               let i = 0;
               rule.charAt(i) !== rule.charAt(i).toUpperCase();
               i++
-            )
-              string += rule.charAt(i);
-          else string = rule.charAt(0);
-          console.log(string);
+            ) {
+              console.log(rule, i, rule.charAt(i));
+              //string += rule.charAt(i);
+            }
+          else string = */
+          strings.push(rule.charAt(0));
+          // console.log(string);
         }
       }
+      return strings;
     },
   },
 };

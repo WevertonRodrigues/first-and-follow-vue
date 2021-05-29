@@ -5,12 +5,15 @@
     </button>
     <slot v-else v-bind="{ showInput, changeShowInput }">
       <input
+        :value="input"
         ref="inputAdd"
         type="text"
         :placeholder="placeholder"
         @keyup.enter.prevent="addEntry"
         @keyup.esc="$refs.inputAdd.blur()"
         @blur="changeShowInput(false)"
+        @input="handler"
+        maxlength="1"
       />
     </slot>
   </div>
@@ -27,10 +30,22 @@ export default {
       type: String,
       default: "Nome",
     },
+    handlerInput: {
+      type: Function,
+      default: (evt) => {
+        console.log(evt);
+        evt.target.value.toUpperCase();
+      },
+    },
+    inputRef: {
+      type: String,
+      default: "inputAdd",
+    },
   },
 
   data() {
     return {
+      input: "",
       showInput: false,
     };
   },
@@ -47,14 +62,17 @@ export default {
     },
     handlerClickAddEntry() {
       this.changeShowInput(true);
-      console.log(this.$slots.default);
-      if (this.$slots.default !== undefined)
-        this.$nextTick(() => this.$refs.inputAdd.focus());
-      else this.$emit("hide");
+      this.$nextTick(() => {
+        console.log(this.$refs[this.inputRef]);
+        this.$refs[this.inputRef].focus();
+      });
     },
     addEntry(evt) {
       this.$emit("newEntry", evt.target.value);
       this.$refs.inputAdd.blur();
+    },
+    handler(evt) {
+      this.input = this.handlerInput(evt);
     },
   },
 };
