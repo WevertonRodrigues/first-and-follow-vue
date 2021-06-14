@@ -30,13 +30,6 @@ export default {
       type: String,
       default: "Nome",
     },
-    handlerInput: {
-      type: Function,
-      default: (evt) => {
-        console.log(evt);
-        evt.target.value.toUpperCase();
-      },
-    },
     inputRef: {
       type: String,
       default: "inputAdd",
@@ -53,6 +46,7 @@ export default {
   watch: {
     showInput() {
       this.$emit("show");
+      if (this.showInput) this.input = "";
     },
   },
 
@@ -63,7 +57,6 @@ export default {
     handlerClickAddEntry() {
       this.changeShowInput(true);
       this.$nextTick(() => {
-        console.log(this.$refs[this.inputRef]);
         this.$refs[this.inputRef].focus();
       });
     },
@@ -72,7 +65,7 @@ export default {
       this.$refs.inputAdd.blur();
     },
     handler(evt) {
-      this.input = this.handlerInput(evt);
+      this.input = evt.target.value.toLowerCase();
     },
   },
 };

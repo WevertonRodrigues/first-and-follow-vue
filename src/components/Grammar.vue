@@ -46,10 +46,8 @@
           class="grammar-item margin-right"
           @click="contextFreeGrammar[target].splice(index, 1)"
         >
-          {{ item
-          }}<span v-if="index !== contextFreeGrammar[target].length - 1"
-            >,</span
-          >
+          <span v-html="formatRule(item)"></span>
+          <span v-if="index !== contextFreeGrammar[target].length - 1">,</span>
         </span>
         },
       </div>
@@ -59,7 +57,7 @@
 
     <!-- Production rules -->
     <div
-      v-if="Object.keys(contextFreeGrammar.productionRules).length > 0"
+      v-if="variables.length > 0"
       class="d-flex flex-center"
       style="margin-bottom: 50px"
     >
@@ -69,7 +67,7 @@
           class="d-flex"
           v-for="(
             variableProductionRule, variableProductionRuleIndex
-          ) in Object.keys(contextFreeGrammar.productionRules)"
+          ) in variables"
           :key="variableProductionRuleIndex"
         >
           {{ variableProductionRule }}&rhard;
@@ -91,11 +89,7 @@
               >|</span
             >
           </div>
-          <span
-            v-if="
-              variableProductionRuleIndex !==
-              Object.keys(contextFreeGrammar.productionRules).length - 1
-            "
+          <span v-if="variableProductionRuleIndex !== variables.length - 1"
             >,
           </span>
         </div>
@@ -103,25 +97,34 @@
       }
     </div>
 
-    <!-- First -->
-    <div
-      v-if="contextFreeGrammar.initialVariable.length > 0"
-      class="d-flex flex-center"
+    <button
+      @click="fillFirstsAndFollows"
+      :disabled="!contextFreeGrammar.initialVariable"
+      style="margin-bottom: 50px"
     >
-      <span class="margin-right"
-        >First({{ contextFreeGrammar.initialVariable }}) = {</span
-      >
-      <span
-        v-for="(string, stringIndex) in firstFromInitialVariable"
-        :key="string"
-        class="margin-right"
-      >
-        <span v-html="formatRule(string)"></span>
-        <span v-if="stringIndex !== firstFromInitialVariable.length - 1"
-          >,</span
+      Preencher primeiros e seguintes
+    </button>
+
+    <div v-if="sets[0].items" class="container-result d-flex flex-center">
+      <div v-for="set in sets" :key="set.name" :style="set.style">
+        {{ set.name }}s
+        <div
+          v-for="variable in variables"
+          :key="`${set.name}-${variable}`"
+          class="d-flex"
         >
-      </span>
-      }
+          <span class="margin-right">{{ set.name }}({{ variable }}) = {</span>
+          <span
+            v-for="(string, stringIndex) in set.items[variable]"
+            :key="`${set.name}-${variable}-${string}`"
+            class="margin-right"
+          >
+            <span v-html="formatRule(string)"></span>
+            <span v-if="stringIndex !== set.items[variable].length - 1">,</span>
+          </span>
+          }
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -138,17 +141,28 @@ export default {
 
   data() {
     return {
+      sets: [
+        { name: "First", items: null, style: "margin-right: 15px" },
+        { name: "Follow", items: null },
+      ],
       contextFreeGrammar: {
-        variables: [],
+        variables: ["S", "A", "B", "C", "D"],
         terminalSymbols: [],
         productionRules: {
-          /* S: ["A", "B", "X", "cF"],
-          A: ["abaAa", "Xaa"],
-          B: ["b", ""],
-          X: ["2AAB", "e", "F"],
-          F: ["`B)", "X", "B"], */
+          S: ["BA"],
+          A: ["+BA", " "],
+          B: ["DC"],
+          C: ["*DC", " "],
+          D: ["(S)", "n"],
         },
-        initialVariable: "",
+        /* 
+          S → BA
+          A → +BA | ''
+          B → DC
+          C → *DC | ''
+          D → (S) | n
+        */
+        initialVariable: null,
       },
     };
   },
@@ -157,22 +171,19 @@ export default {
     initialVariableOptions() {
       return Object.keys(this.contextFreeGrammar.productionRules);
     },
-    firstFromInitialVariable() {
-      let arr = [];
-      if (this.contextFreeGrammar.initialVariable !== "") {
-        const temp = this.first(this.contextFreeGrammar.initialVariable);
-
-        temp.map((f) => {
-          if (!arr.includes(f)) arr.push(f);
-        });
-      }
-      return arr;
+    variables() {
+      return Object.keys(this.contextFreeGrammar.productionRules);
     },
   },
 
   methods: {
     addNewEntry(target, evt) {
       if (this.contextFreeGrammar[target].findIndex((v) => v === evt) === -1) {
+        if (
+          [" "].includes(evt) &&
+          this.contextFreeGrammar[target].includes(" ")
+        )
+          return;
         this.contextFreeGrammar[target].push(evt);
       }
     },
@@ -185,12 +196,14 @@ export default {
     },
 
     formatRule(string) {
-      if (string.length > 0) return string;
+      if (![" "].includes(string)) return string;
       return "&epsilon;";
     },
 
     first(variable, historic = [], strings = []) {
       const rules = this.contextFreeGrammar.productionRules[variable];
+
+      if (variable.toLowerCase() === variable) return [variable];
 
       for (const rule of rules) {
         if (
@@ -218,7 +231,61 @@ export default {
           // console.log(string);
         }
       }
+
+      const arr = [];
+      strings.map((f) => {
+        if (!arr.includes(f)) arr.push(f);
+      });
+      return arr;
+    },
+
+    follow(variable, strings = []) {
+      let index = -1;
+
+      this.variables.map((variableM) => {
+        // Rule 1
+        if (
+          variable === this.contextFreeGrammar.initialVariable &&
+          variable === variableM
+        )
+          strings.push("$");
+        this.contextFreeGrammar.productionRules[variableM].map(
+          (productionRule) => {
+            index = productionRule.indexOf(variable);
+
+            if (index > 0) {
+              let beta = [];
+              beta = productionRule.slice(
+                index + 1 < productionRule.length ? index + 1 : index
+              );
+
+              const firstBeta = this.first(beta[0]);
+              // Rule 2
+              if (beta[0] !== " " && beta[0] !== variable) {
+                const firstBetaF = firstBeta.filter((fB) => fB !== " ");
+                strings = [...strings, ...firstBetaF];
+              }
+              // Rule 3
+              if (firstBeta.includes(" ") && variableM !== variable) {
+                strings = [...strings, ...this.follow(variableM)];
+              }
+            }
+          }
+        );
+      });
+
+      //console.log(variable, strings);
       return strings;
+    },
+
+    fillFirstsAndFollows() {
+      this.sets[0].items = {};
+      this.sets[1].items = {};
+
+      this.variables.map((variable) => {
+        this.$set(this.sets[0].items, variable, this.first(variable));
+        this.$set(this.sets[1].items, variable, this.follow(variable));
+      });
     },
   },
 };
@@ -233,5 +300,12 @@ export default {
 
 .margin-bottom {
   margin-bottom: 10px;
+}
+
+.container-result {
+  flex-direction: row;
+  border: 1px solid;
+  padding: 5px;
+  border-radius: 5px;
 }
 </style>

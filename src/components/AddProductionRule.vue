@@ -18,7 +18,6 @@
         <input
           :value="variableName"
           ref="productionRuleNameInput"
-          @keyup.enter.prevent="handlerVariableName"
           @keyup.esc="$refs.productionRuleNameInput.blur()"
           placeholder="Variável"
           maxlength="1"
@@ -33,6 +32,7 @@
               :ref="`ruleInput${ruleIndex}`"
               v-model="rules[ruleIndex]"
               :placeholder="`Regra ${ruleIndex + 1}`"
+              @keyup.enter.prevent="rules.push('')"
             />
             <!-- Remove btn -->
             <button @click="rules.splice(ruleIndex, 1)">&otimes;</button>
@@ -52,7 +52,7 @@
           <input
             ref="addNewRuleInput"
             v-if="addNewRule"
-            @keyup.enter.prevent="handlerVariableName"
+            @keyup.enter.prevent="rules.push('')"
             @keyup.esc="$refs.addNewRuleInput.blur()"
           />
         </div>
