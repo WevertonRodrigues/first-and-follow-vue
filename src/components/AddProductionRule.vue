@@ -7,13 +7,18 @@
       inputRef="productionRuleNameInput"
     >
       <!-- Add production rule -->
-      <button @click="handlerSaveProductionRules()">
+      <button @click="handlerSaveProductionRules()" style="margin-bottom: 10px">
         Salvar regra de produção
       </button>
       <!-- Inputs -->
       <div class="d-flex flex-center">
         <!-- Close -->
-        <button @click="$refs.addEntry.changeShowInput(false)">&times;</button>
+        <button
+          class="margin-right"
+          @click="$refs.addEntry.changeShowInput(false)"
+        >
+          &times;
+        </button>
         <!-- Input variable name -->
         <input
           :value="variableName"
@@ -35,7 +40,12 @@
               @keyup.enter.prevent="rules.push('')"
             />
             <!-- Remove btn -->
-            <button @click="rules.splice(ruleIndex, 1)">&otimes;</button>
+            <button
+              @click="rules.splice(ruleIndex, 1)"
+              style="margin-left: 2px"
+            >
+              &otimes;
+            </button>
             <!-- Or span -->
             <span v-if="ruleIndex !== rules.length - 1">OU</span>
           </div>
@@ -45,6 +55,7 @@
               rules.push('');
               $nextTick(() => $refs[`ruleInput${rules.length - 1}`].focus());
             "
+            style="width: 100%; margin-top: 2px"
           >
             &plus;
           </button>
@@ -80,11 +91,17 @@ export default {
   methods: {
     handlerSaveProductionRules() {
       if (this.variableName !== "" && this.rules.length > 0) {
-        this.$emit("addNewRule", {
-          variableName: this.variableName,
-          rules: this.rules,
+        let canEmit = true;
+        this.rules.map((rule) => {
+          if (rule.length < 1) return (canEmit = false);
         });
-        this.$refs.addEntry.changeShowInput(false);
+        if (canEmit) {
+          this.$emit("addNewRule", {
+            variableName: this.variableName,
+            rules: this.rules,
+          });
+          this.$refs.addEntry.changeShowInput(false);
+        }
       }
     },
 

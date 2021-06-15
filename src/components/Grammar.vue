@@ -1,19 +1,5 @@
 <template>
   <div class="d-flex flex-col">
-    <!-- <AddEntry
-      @newEntry="addNewEntry('variables', $event.toUpperCase())"
-      btnText="Adicione uma variável"
-      placeholder="Nome da variável"
-      class="margin-bottom"
-    /> -->
-
-    <AddEntry
-      @newEntry="addNewEntry('terminalSymbols', $event)"
-      btnText="Adicione um símbolo terminal"
-      placeholder="Nome do símbolo terminal"
-      class="margin-bottom"
-    />
-
     <AddProductionRule class="margin-bottom" @addNewRule="handlerAddRule" />
 
     <div class="d-flex flex-col" style="margin-bottom: 50px">
@@ -21,7 +7,7 @@
       <select v-model="contextFreeGrammar.initialVariable">
         <option disabled value="">Escolha um item</option>
         <option
-          v-for="(opt, optIndex) in initialVariableOptions"
+          v-for="(opt, optIndex) in variables"
           :key="optIndex"
           :value="opt"
         >
@@ -105,6 +91,7 @@
       Preencher primeiros e seguintes
     </button>
 
+    <!-- Sets -->
     <div v-if="sets[0].items" class="container-result d-flex flex-center">
       <div v-for="set in sets" :key="set.name" :style="set.style">
         {{ set.name }}s
@@ -130,12 +117,10 @@
 </template>
 
 <script>
-import AddEntry from "../components/AddEntry";
 import AddProductionRule from "../components/AddProductionRule";
 
 export default {
   components: {
-    AddEntry,
     AddProductionRule,
   },
 
@@ -146,14 +131,16 @@ export default {
         { name: "Follow", items: null },
       ],
       contextFreeGrammar: {
-        variables: ["S", "A", "B", "C", "D"],
+        variables: [
+          /* "S", "A", "B", "C", "D" */
+        ],
         terminalSymbols: [],
         productionRules: {
-          S: ["BA"],
+          /* S: ["BA"],
           A: ["+BA", " "],
           B: ["DC"],
           C: ["*DC", " "],
-          D: ["(S)", "n"],
+          D: ["(S)", "n"], */
         },
         /* 
           S → BA
@@ -168,31 +155,32 @@ export default {
   },
 
   computed: {
-    initialVariableOptions() {
-      return Object.keys(this.contextFreeGrammar.productionRules);
-    },
     variables() {
       return Object.keys(this.contextFreeGrammar.productionRules);
     },
   },
 
-  methods: {
-    addNewEntry(target, evt) {
-      if (this.contextFreeGrammar[target].findIndex((v) => v === evt) === -1) {
-        if (
-          [" "].includes(evt) &&
-          this.contextFreeGrammar[target].includes(" ")
-        )
-          return;
-        this.contextFreeGrammar[target].push(evt);
-      }
-    },
+  created() {
+    document.title = "First/Follow";
+  },
 
+  methods: {
     handlerAddRule(evt) {
       const { variableName, rules } = evt;
 
-      this.$set(this.contextFreeGrammar.productionRules, variableName, rules);
-      this.contextFreeGrammar.variables.push(variableName);
+      if (!this.variables.includes(variableName)) {
+        rules.map((rule) => {
+          for (const char of rule)
+            if (
+              char === char.toLowerCase() &&
+              !this.contextFreeGrammar.terminalSymbols.includes(char)
+            )
+              this.contextFreeGrammar.terminalSymbols.push(char);
+        });
+
+        this.$set(this.contextFreeGrammar.productionRules, variableName, rules);
+        this.contextFreeGrammar.variables.push(variableName);
+      }
     },
 
     formatRule(string) {
