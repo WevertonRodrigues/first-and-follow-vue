@@ -1,4 +1,4 @@
-# first-vue
+# first-and-follow-vue
 
 ### Antes de tudo é necessário possuir o Yarn instalado para rodar o projeto
 
